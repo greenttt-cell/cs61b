@@ -114,11 +114,80 @@ public class Model extends Observable {
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
 
+        // 先考虑north方向且view方向已变，也就是坐标是新的了
+        //四个列column形成四个分析，不过是对称的，所以考虑一列，其余类似，且每列顶部的不用动，只用动剩下三个
+        //移动思路：从上往下，行2移到行3，行1移到行2，行0移到行2，（最理想状况）
+        board.setViewingPerspective(side);
+        int s = board.size();
+        for (int i = 0; i < s; i += 1) {
+            int count = tile_num(board, i);
+            changed = changed | move_top_tile(board, i, s-1);
+            if (count > 1){
+                changed = changed | move_merge(i,s-count , s-1);
+            }
+        }
+        board.setViewingPerspective(Side.NORTH);
         checkGameOver();
         if (changed) {
             setChanged();
         }
         return changed;
+    }
+
+    public static int tile_num(Board b, int i){
+        int s = b.size();
+        int count = 0;
+        for(int j = 0; j < s; j += 1){
+            if(b.tile(i, j) != null){
+                count += 1;
+            }
+        }return count;
+    }
+    public static  boolean move_top_tile(Board b, int i, int max_bound){ //s-1//
+        int s = b.size();
+        boolean change;
+        change = false;
+        for(int j = max_bound - 1; j >= 0; j -= 1){
+            Tile t = b.tile(i, j);
+            if(t != null){
+                int dest_row = j;
+                for(int k = j + 1; k <= max_bound; k += 1){
+                    if(b.tile(i, k) != null){
+                        break;
+                    }
+                    dest_row = k;
+                }
+                if(dest_row > j){
+                    b.move(i, dest_row, t);
+                    change = true;
+                }
+            }
+        }return change;
+    }
+
+    public boolean move_merge(int i, int min, int max){
+        if(min == max){
+            return false;
+        }
+        if(min + 1 == max){
+            Tile t= board.tile(i, min);
+            if(t.value() == board.tile(i, max).value()){
+                board.move(i, max, t);
+                score += 2 * t.value();
+                return true;
+            }return false;
+        }else{
+            Tile t = board.tile(i, max - 1);
+            if(t.value() == board.tile(i, max).value()){
+                board.move(i, max, t);
+                score += 2 * t.value();
+                move_top_tile(board, i, max - 1);
+                move_merge(i, min + 1, max - 1);
+                return true;
+            }else{
+                return move_merge(i, min, max -1);
+            }
+        }
     }
 
     /** Checks if the game is over and sets the gameOver variable
@@ -137,8 +206,14 @@ public class Model extends Observable {
      *  Empty spaces are stored as null.
      * */
     public static boolean emptySpaceExists(Board b) {
-        // TODO: Fill in this function.
-        return false;
+        int s = b.size();
+        for(int i = 0; i < s; i += 1){
+            for(int j = 0; j < s; j += 1){
+                if(b.tile(i, j) == null){
+                    return true;
+                }
+            }
+        }return false;
     }
 
     /**
@@ -147,8 +222,17 @@ public class Model extends Observable {
      * given a Tile object t, we get its value with t.value().
      */
     public static boolean maxTileExists(Board b) {
-        // TODO: Fill in this function.
-        return false;
+        int s = b.size();
+        for(int i = 0; i < s; i += 1){
+            for(int j = 0; j < s; j += 1){
+                if(b.tile(i, j) == null){
+                    continue;
+                }
+                if (b.tile(i, j).value() == MAX_PIECE){
+                    return true;
+                }
+            }
+        }return false;
     }
 
     /**
@@ -158,10 +242,31 @@ public class Model extends Observable {
      * 2. There are two adjacent tiles with the same value.
      */
     public static boolean atLeastOneMoveExists(Board b) {
-        // TODO: Fill in this function.
-        return false;
-    }
+        if (emptySpaceExists(b)){
+            return true;
+        }int s = b.size();
 
+        for(int i = 0; i < s; i += 1){
+            for(int j = 0; j < s; j += 1){
+                int x = b.tile(i, j).value();
+                if(is_wrong(i-1, j, s) && b.tile(i-1, j) != null && b.tile(i-1, j).value() == x){
+                        return true;
+                }
+                if(is_wrong(i+1, j, s) && b.tile(i+1, j) != null && b.tile(i+1, j).value() == x){
+                    return true;
+                }
+                if(is_wrong(i, j+1, s) && b.tile(i, j+1) != null && b.tile(i, j+1).value() == x){
+                    return true;
+                }
+                if(is_wrong(i, j-1, s) && b.tile(i, j-1) != null && b.tile(i, j-1).value() == x){
+                    return true;
+                }
+            }
+        }return false;
+    }
+    public static boolean is_wrong(int i, int j, int s){
+        return i >= 0 && i < s && j >= 0 && j < s;
+    }
 
     @Override
      /** Returns the model as a string, used for debugging. */
