@@ -33,8 +33,17 @@ public class LinkedListDequeTest {
 		assertEquals(3, lld1.size());
 
         lld1.addFirst("have");
+        lld1.removeFirst();
 		System.out.println("Printing out deque: ");
 		lld1.printDeque();
+        //lld1.removeLast();
+        System.out.println("Printing out deque: ");
+        lld1.printDeque();
+        lld1.addLast("west");
+        lld1.addLast("east");
+        lld1.addLast("south");
+        lld1.removeLast();
+
         //assertEquals("middle", lld1.get(2));
 
     }
