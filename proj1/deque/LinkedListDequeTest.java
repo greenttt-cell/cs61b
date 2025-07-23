@@ -44,7 +44,9 @@ public class LinkedListDequeTest {
         lld1.addLast("south");
         lld1.removeLast();
 
-        //assertEquals("middle", lld1.get(2));
+        assertEquals("middle", lld1.get(1));
+        assertEquals("east", lld1.get(4));
+        assertEquals(null, lld1.get(5));
 
     }
 

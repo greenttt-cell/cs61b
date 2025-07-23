@@ -114,4 +114,27 @@ public class ArrayDeque <T>{
         nextLast = index;
         return a;
     }
+
+    public T get(int i){
+        if(this.isEmpty()){
+            return null;
+        }
+        int index = (nextFirst + 1 + i) % item.length;
+        return item[index];
+    }
+
+    public boolean equals(Object o){
+        if(! (o instanceof ArrayDeque<?>)){
+            return false;
+        }
+        ArrayDeque<?> obj = (ArrayDeque<?>) o;
+        if(obj.size() != size){
+            return false;
+        }
+        for(int i = 0; i < size; i += 1){
+            if(this.get(i) != obj.get(i)){
+                return false;
+            }
+        }return true;
+    }
 }
