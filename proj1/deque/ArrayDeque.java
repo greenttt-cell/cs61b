@@ -1,0 +1,95 @@
+package deque;
+
+public class ArrayDeque <T>{
+    private T[] item;
+    private int nextFirst;
+    private int nextLast;
+    private int size;
+    private int sizeall;
+    private static int factor = 2;
+    private static float lbf = 0.25f;
+
+    public ArrayDeque(){
+        item = (T[]) new Object[3];
+        nextFirst = 1;
+        nextLast = 2;
+        size = 0;
+        sizeall = item.length;
+    }
+
+    public int size(){
+        return size;
+    }
+
+    private void resize(int capacity){
+        T[] a = (T[]) new Object[capacity];
+        int x = size - nextFirst - 1;
+        if(nextLast == nextFirst + 1){
+            System.arraycopy(a,1 , item, nextFirst + 1, x);
+            System.arraycopy(a, x + 1, item, 0, nextFirst + 1 );
+        }else{
+            System.arraycopy(a, 1, item, 0, size);
+        }
+        nextFirst = 0;
+        nextLast = size + 1;
+        item = a;
+    }
+
+    public void addFirst(T element){
+        if(nextFirst >= 0 && nextFirst + 1 != nextLast){
+            item[nextFirst] = element;
+            nextFirst -= 1;
+            size += 1;
+            return;
+        }
+        if(size < sizeall){
+            item[sizeall - 1] = element;
+            nextFirst = sizeall - 2;
+            size += 1;
+        }else{
+            resize(factor * size);
+            item[nextFirst] = element;
+            nextFirst = sizeall - 1;
+            size += 1;
+        }
+    }
+
+    public void addLast(T element){
+        if(nextLast - 1 != nextFirst && nextLast < sizeall){
+            item[nextLast] = element;
+            size += 1;
+            nextLast += 1;
+            return;
+        }
+        if(size < sizeall){
+            item[0] = element;
+            nextLast = 1;
+            size += 1;
+        }else{
+            resize(factor * size);
+            item[nextLast] = element;
+            nextLast += 1;
+            size += 1;
+        }
+    }
+
+    public boolean isEmpty(){
+        return size == 0;
+    }
+
+    public void printDeque(){
+        if(nextFirst + 1 >= nextLast){
+            for(int i = nextFirst + 1; i < sizeall; i += 1){
+                System.out.print(item[i] + " ");
+            }
+            for(int i = 0; i < nextLast; i += 1){
+                System.out.print(item[i] + " ");
+            }
+        }else{
+            for(int i = nextFirst + 1; i < nextLast; i += 1){
+                System.out.print(item[i] + " ");
+            }
+        }
+        System.out.println();
+    }
+}

@@ -13,7 +13,7 @@ public class LinkedListDeque <T>{
         }
     }
     private circularNode sentinel;
-    public int size = 0;
+    private int size = 0;
 
     /* empty circularNode*/
     public LinkedListDeque (){
