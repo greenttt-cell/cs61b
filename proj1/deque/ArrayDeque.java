@@ -10,9 +10,9 @@ public class ArrayDeque <T>{
     private static float lbf = 0.25f;
 
     public ArrayDeque(){
-        item = (T[]) new Object[3];
-        nextFirst = 1;
-        nextLast = 2;
+        item = (T[]) new Object[8];
+        nextFirst = 3;
+        nextLast = 4;
         size = 0;
         sizeall = item.length;
     }
@@ -25,10 +25,10 @@ public class ArrayDeque <T>{
         T[] a = (T[]) new Object[capacity];
         int x = size - nextFirst - 1;
         if(nextLast == nextFirst + 1){
-            System.arraycopy(a,1 , item, nextFirst + 1, x);
-            System.arraycopy(a, x + 1, item, 0, nextFirst + 1 );
+            System.arraycopy(item,nextFirst + 1 , a, 1, x);
+            System.arraycopy(item, 0, a, x + 1, nextFirst + 1 );
         }else{
-            System.arraycopy(a, 1, item, 0, size);
+            System.arraycopy(item, 0, a, 1, size);
         }
         nextFirst = 0;
         nextLast = size + 1;
@@ -36,7 +36,7 @@ public class ArrayDeque <T>{
     }
 
     public void addFirst(T element){
-        if(nextFirst >= 0 && nextFirst + 1 != nextLast){
+        if(nextFirst >= 0 && size < sizeall){
             item[nextFirst] = element;
             nextFirst -= 1;
             size += 1;
@@ -55,7 +55,7 @@ public class ArrayDeque <T>{
     }
 
     public void addLast(T element){
-        if(nextLast - 1 != nextFirst && nextLast < sizeall){
+        if(size < sizeall && nextLast < sizeall){
             item[nextLast] = element;
             size += 1;
             nextLast += 1;
