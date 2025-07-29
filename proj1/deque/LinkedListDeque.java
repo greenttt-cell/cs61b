@@ -1,6 +1,6 @@
 package deque;
 
-public class LinkedListDeque <T>{
+public class LinkedListDeque <T> implements Deque<T>{
     /* method needed: add, remove, get, size, empty deque, get(recursive)*/
     public class circularNode{
         public T item;
@@ -62,9 +62,7 @@ public class LinkedListDeque <T>{
     }
 
     /* check whether it is empty*/
-    public boolean isEmpty(){
-        return size == 0;
-    }
+
 
     /* print out the item of Deque*/
     public void printDeque(){

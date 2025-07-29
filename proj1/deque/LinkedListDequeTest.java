@@ -1,6 +1,9 @@
 package deque;
 
 import org.junit.Test;
+
+import java.util.Comparator;
+
 import static org.junit.Assert.*;
 
 
@@ -155,5 +158,56 @@ public class LinkedListDequeTest {
         }
 
 
+    }
+
+
+    @Test
+    /* test max method of maxarraydeque */
+    public void maxTest(){
+        
+
+        /* comparator is abs function*/
+         class absComparator implements Comparator<Integer>{
+            @Override
+            public int compare(Integer a, Integer b){
+                return Math.abs(a) - Math.abs(b);
+            }
+        }
+        /* comparator is to find the length of string*/
+        class strLenComparator implements Comparator<String>{
+            @Override
+            public int compare(String a, String b){
+                return a.length() - b.length();
+            }
+        }
+        /* find the sum_digit max */
+        class MaxsumDigitComparator implements Comparator<Integer>{
+            @Override
+            public int compare(Integer a, Integer b){
+                return sumdigit(a) - sumdigit(b);
+            }
+        }
+
+        Comparator<Integer> abscom = new absComparator();
+        Comparator<Integer> sumcom = new MaxsumDigitComparator();
+        MaxArrayDeque<Integer> M = new MaxArrayDeque<>(abscom);
+        M.addLast(-1);
+        M.addLast(1);
+        M.addLast(2);
+        M.addLast(3);
+        M.addLast(-4);
+        M.addLast(17); M.addLast(21);
+        M.addLast(22);
+        System.out.println(M.max());
+        //System.out.println(M.max(absComparator));
+        System.out.println(M.max(sumcom));
+    }
+    public int sumdigit(int a){
+        int x = Math.abs(a);
+        if(x < 10){
+            return x;
+        }else{
+            return x % 10 + sumdigit(x / 10);
+        }
     }
 }

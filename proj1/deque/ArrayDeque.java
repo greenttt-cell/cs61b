@@ -1,6 +1,6 @@
 package deque;
 
-public class ArrayDeque <T>{
+public class ArrayDeque <T> implements Deque<T>{
     private T[] item;
     private int nextFirst;
     private int nextLast;
@@ -14,7 +14,7 @@ public class ArrayDeque <T>{
         nextLast = 2;
         size = 0;
     }
-
+    @Override
     public int size(){
         return size;
     }
@@ -32,7 +32,7 @@ public class ArrayDeque <T>{
         nextLast = size + 1;
         item = a;
     }
-
+    @Override
     public void addFirst(T element){
         if(nextFirst >= 0 && size < item.length){
             item[nextFirst] = element;
@@ -51,7 +51,7 @@ public class ArrayDeque <T>{
             size += 1;
         }
     }
-
+    @Override
     public void addLast(T element){
         if(size < item.length && nextLast < item.length){
             item[nextLast] = element;
@@ -70,11 +70,7 @@ public class ArrayDeque <T>{
             size += 1;
         }
     }
-
-    public boolean isEmpty(){
-        return size == 0;
-    }
-
+    @Override
     public void printDeque(){
         if(nextFirst + 1 >= nextLast){
             for(int i = nextFirst + 1; i < item.length; i += 1){
@@ -90,7 +86,7 @@ public class ArrayDeque <T>{
         }
         System.out.println();
     }
-
+    @Override
     public T removeFirst(){
         if(this.isEmpty()){
             return null;
@@ -102,7 +98,7 @@ public class ArrayDeque <T>{
         size -= 1;
         return a;
     }
-
+    @Override
     public T removeLast(){
         if(this.isEmpty()){
             return null;
@@ -114,7 +110,7 @@ public class ArrayDeque <T>{
         nextLast = index;
         return a;
     }
-
+    @Override
     public T get(int i){
         if(this.isEmpty()){
             return null;
@@ -122,7 +118,7 @@ public class ArrayDeque <T>{
         int index = (nextFirst + 1 + i) % item.length;
         return item[index];
     }
-
+    @Override
     public boolean equals(Object o){
         if(! (o instanceof ArrayDeque<?>)){
             return false;
