@@ -11,4 +11,9 @@ public interface Deque<T> {
     public T removeFirst();
     public T removeLast();
     public T get(int index);
+    default public T getRecursive(int i) {
+        // 可以先写一个简单的占位实现
+        return get(i);
+    }
+
 }

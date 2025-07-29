@@ -87,6 +87,7 @@ public class LinkedListDeque <T> implements Deque<T>{
         }return tmp.item;
     }
 
+    @Override
     public T getRecursive(int i){
         if(i < 0 || i >= size){
             return null;
