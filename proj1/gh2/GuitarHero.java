@@ -8,7 +8,7 @@ public class GuitarHero {
         GuitarString[] keyboardArray = (GuitarString[]) new Object[capacity];
         String keyboard = "q2we4r5ty7u8i9op-[=zxdcfvgbnjmk,.;/' ";
         for(int i = 0; i < capacity; i += 1){
-            GuitarString key = new GuitarString(440 * Math.pow(2, (i - 24)/12);
+            GuitarString key = new GuitarString(440 * Math.pow(2, (i - 24)/12));
             keyboardArray[i] = key;
         }
         while(true){

@@ -176,7 +176,7 @@ public class LinkedListDequeTest {
         /* comparator is to find the length of string*/
         class strLenComparator implements Comparator<String>{
             @Override
-            public int compare(String a, String b){
+            public int compare(String a, String b) {
                 return a.length() - b.length();
             }
         }
@@ -204,10 +204,24 @@ public class LinkedListDequeTest {
     }
     public int sumdigit(int a){
         int x = Math.abs(a);
-        if(x < 10){
+        if(x < 10) {
             return x;
-        }else{
+        } else {
             return x % 10 + sumdigit(x / 10);
         }
+    }
+
+    @Test
+    public void testRemovelast() {
+        ArrayDeque<Integer> array = new ArrayDeque<>();
+        array.addFirst(3);
+        array.addFirst(4);
+        array.addFirst(5);
+        array.addFirst(6);
+        array.addFirst(7);
+        array.addFirst(8);
+        //array.removeFirst();
+        array.removeLast();
+        array.removeLast();
     }
 }
