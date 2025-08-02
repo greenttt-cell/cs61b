@@ -87,7 +87,7 @@ public class LinkedListDeque <T> implements Deque<T>{
         }return tmp.item;
     }
 
-    /*
+
     public T getRecursive(int i){
         if(i < 0 || i >= size){
             return null;
@@ -95,13 +95,13 @@ public class LinkedListDeque <T> implements Deque<T>{
         return getRecursiveHelp(i, sentinel);
     }
     /*helper func for recursion*/
-    /*private T getRecursiveHelp(int i, circularNode s){
+    private T getRecursiveHelp(int i, circularNode s){
         if(i == 0){
             return s.next.item;
         }else{
             return getRecursiveHelp(i - 1, s.next);
         }
-    }*/
+    }
 
     public T removeFirst(){
         if(this.isEmpty()){
@@ -148,4 +148,9 @@ public class LinkedListDeque <T> implements Deque<T>{
             }
         }return true;
     }
+
+    public Iterator<T> iterator(){
+        
+    }
 }
+
