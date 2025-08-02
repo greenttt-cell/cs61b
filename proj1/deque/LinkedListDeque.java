@@ -5,9 +5,9 @@ import java.util.Iterator;
 public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
     /* method needed: add, remove, get, size, empty deque, get(recursive)*/
     private class circularNode {
-        public T item;
-        public circularNode next;
-        public circularNode prev;
+        private T item;
+        private circularNode next;
+        private circularNode prev;
         public circularNode(T i, circularNode n, circularNode p) {
             item = i;
             next = n;
@@ -41,7 +41,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
 
     public void addFirst(T element) {
         circularNode tmp = new circularNode(element, null, null);
-        if (size == 0){
+        if (size == 0) {
             addEmptyDeque(element);
             return;
         }
@@ -69,7 +69,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
     /* print out the item of Deque*/
     public void printDeque() {
         circularNode tmp = sentinel;
-        while (tmp.next != sentinel){
+        while (tmp.next != sentinel) {
             System.out.print(tmp.next.item + " ");
             tmp = tmp.next;
         }
@@ -137,11 +137,11 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
 
     /*return whether is equal*/
     public boolean equals(Object o) {
-        if (! (o instanceof LinkedListDeque<?>)) {
+        if (!(o instanceof Deque<?>)) {
             return false;
         }
-        LinkedListDeque<?> obj = (LinkedListDeque<?>) o;
-        if (this.size() != obj.size()){
+        Deque<?> obj = (Deque<?>) o;
+        if (this.size() != obj.size()) {
             return false;
         }
         for (int i = 0; i < this.size(); i += 1) {
@@ -156,7 +156,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
     }
 
     private class LinkedListDequeIterator implements Iterator<T> {
-        public int order;
+        private int order;
         public LinkedListDequeIterator() {
             order = 0;
         }
@@ -164,9 +164,9 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
             return order < size;
         }
         public T next() {
-            T item = get(order);
+            T item1 = get(order);
             order += 1;
-            return item;
+            return item1;
         }
     }
 }

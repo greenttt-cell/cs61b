@@ -3,7 +3,6 @@ package gh2;
 
 import deque.ArrayDeque;
 import deque.Deque;
-import deque.LinkedListDeque;
 
 
 //Note: This file will not compile until you complete the Deque implementations
@@ -22,7 +21,7 @@ public class GuitarString {
 
         int capacity = (int) Math.round(SR / frequency);
         buffer = new ArrayDeque<Double>();
-        for(int i = 0; i < capacity; i += 1){
+        for (int i = 0; i < capacity; i += 1) {
             buffer.addLast(0.0);
         }
     }
@@ -31,7 +30,7 @@ public class GuitarString {
     /* Pluck the guitar string by replacing the buffer with white noise. */
     public void pluck() {
         double r;
-        for(int i = 0; i < buffer.size(); i += 1){
+        for (int i = 0; i < buffer.size(); i += 1) {
             r = Math.random() - 0.5;
             buffer.removeFirst();
             buffer.addLast(r);
@@ -42,14 +41,14 @@ public class GuitarString {
      * the Karplus-Strong algorithm.
      */
     public void tic() {
-        double newFirst = 0.996 * 0.5 * (buffer.get(0) + buffer.get(1));
+        double newFirst = DECAY * 0.5 * (buffer.get(0) + buffer.get(1));
         buffer.removeFirst();
         buffer.addLast(newFirst);
     }
 
     /* Return the double at the front of the buffer. */
     public double sample() {
-        if(buffer.isEmpty()){
+        if (buffer.isEmpty()) {
             return 0;
         }
         return buffer.get(0);
