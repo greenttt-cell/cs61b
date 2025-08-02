@@ -1,5 +1,7 @@
 package deque;
 
+import java.util.Iterator;
+
 public class LinkedListDeque <T> implements Deque<T>{
     /* method needed: add, remove, get, size, empty deque, get(recursive)*/
     public class circularNode{
@@ -150,7 +152,22 @@ public class LinkedListDeque <T> implements Deque<T>{
     }
 
     public Iterator<T> iterator(){
-        
+        return new LinkedListDequeIterator();
+    }
+
+    private class LinkedListDequeIterator implements Iterator<T>{
+        public int order;
+        public LinkedListDequeIterator(){
+            order = 0;
+        }
+        public boolean hasNext(){
+            return order < size;
+        }
+        public T next(){
+            T item = get(order);
+            order += 1;
+            return item;
+        }
     }
 }
 

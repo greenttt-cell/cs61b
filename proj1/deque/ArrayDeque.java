@@ -1,12 +1,14 @@
 package deque;
 
+import java.util.Iterator;
+
 public class ArrayDeque <T> implements Deque<T>{
     private T[] item;
     private int nextFirst;
     private int nextLast;
     private int size;
-    private static int factor = 2;
-    private static float lbf = 0.25f;
+    private final int factor = 2;
+    //private float lbf = 0.25f;
 
     public ArrayDeque(){
         item = (T[]) new Object[3];
@@ -133,4 +135,26 @@ public class ArrayDeque <T> implements Deque<T>{
             }
         }return true;
     }
-}
+
+
+    public Iterator<T> iterator(){
+        return new ArrayDequeIterator();
+    }
+
+    private class ArrayDequeIterator implements Iterator<T> {
+        public int order;
+
+        public ArrayDequeIterator() {
+            order = 0;
+        }
+
+        public boolean hasNext() {
+            return order < size;
+        }
+
+        public T next() {
+            T item = get(order);
+            order += 1;
+            return item;
+        }
+    }
