@@ -181,7 +181,7 @@ public class LinkedListDequeTest {
             }
         }
         /* find the sum_digit max */
-        class MaxsumDigitComparator implements Comparator<Integer>{
+        class MaxsumDigitComparator implements Comparator<Integer> {
             @Override
             public int compare(Integer a, Integer b){
                 return sumdigit(a) - sumdigit(b);

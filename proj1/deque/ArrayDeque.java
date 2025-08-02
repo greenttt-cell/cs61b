@@ -36,17 +36,15 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
     }
     @Override
     public void addFirst(T element) {
-        if (nextFirst >= 0 && size < item.length) {
+        if (size < item.length * 0.5) {
             item[nextFirst] = element;
             nextFirst -= 1;
             size += 1;
-            return;
+            if (nextFirst < 0) {
+                nextFirst = item.length - 1;
+            }
         }
-        if (size < item.length) {
-            item[item.length - 1] = element;
-            nextFirst = item.length - 2;
-            size += 1;
-        } else {
+        else {
             resize(factor * size);
             item[nextFirst] = element;
             nextFirst = item.length - 1;
@@ -55,17 +53,15 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
     }
     @Override
     public void addLast(T element) {
-        if (size < item.length && nextLast < item.length) {
+        if (size < item.length * 0.5) {
             item[nextLast] = element;
             size += 1;
             nextLast += 1;
-            return;
+            if (nextLast >= item.length) {
+                nextLast = 0;
+            }
         }
-        if (size < item.length) {
-            item[0] = element;
-            nextLast = 1;
-            size += 1;
-        } else {
+        else {
             resize(factor * size);
             item[nextLast] = element;
             nextLast += 1;
@@ -98,7 +94,7 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
         item[index] = null;
         nextFirst = index;
         size -= 1;
-        if (((float) size / item.length) < 0.25) {
+        if (((float) size / item.length) < 0.25 && item.length > 16) {
             resize(Math.round(((float) item.length / factor)));
         }
         return a;
@@ -113,7 +109,7 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
         item[index] = null;
         size -= 1;
         nextLast = index;
-        if (((float) size / item.length) < 0.25) {
+        if (((float) size / item.length) < 0.25 && item.length > 16) {
             resize(Math.round(((float) item.length / factor)));
         }
         return a;
