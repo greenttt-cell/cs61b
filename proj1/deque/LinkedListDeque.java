@@ -4,7 +4,7 @@ import java.util.Iterator;
 
 public class LinkedListDeque <T> implements Deque<T>{
     /* method needed: add, remove, get, size, empty deque, get(recursive)*/
-    public class circularNode{
+    private class circularNode{
         public T item;
         public circularNode next;
         public circularNode prev;
@@ -53,7 +53,7 @@ public class LinkedListDeque <T> implements Deque<T>{
         size += 1;
     }
 
-    public void addEmptyDeque(T element){
+    private void addEmptyDeque(T element){
         circularNode tmp = new circularNode(element, null, null);
         sentinel.prev = tmp;
         sentinel.next = tmp;
