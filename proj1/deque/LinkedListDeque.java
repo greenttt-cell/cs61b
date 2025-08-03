@@ -4,22 +4,22 @@ import java.util.Iterator;
 
 public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
     /* method needed: add, remove, get, size, empty deque, get(recursive)*/
-    private class circularNode {
+    private class CircularNode {
         private T item;
-        private circularNode next;
-        private circularNode prev;
-        public circularNode(T i, circularNode n, circularNode p) {
+        private CircularNode next;
+        private CircularNode prev;
+        private CircularNode(T i, CircularNode n, CircularNode p) {
             item = i;
             next = n;
             prev = p;
         }
     }
-    private circularNode sentinel;
+    private CircularNode sentinel;
     private int size = 0;
 
     /* empty circularNode*/
     public LinkedListDeque() {
-        sentinel = new circularNode(null, null, null);
+        sentinel = new CircularNode(null, null, null);
         sentinel.next = sentinel;
         sentinel.prev = sentinel;
         size = 0;
@@ -27,7 +27,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
     /* add method include front and back, no looping or recursion */
     public void addLast(T element) {
         /* end == true means back, false means front*/
-        circularNode tmp = new circularNode(element, null, null);
+        CircularNode tmp = new CircularNode(element, null, null);
         if (size == 0) {
             addEmptyDeque(element);
             return;
@@ -40,7 +40,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
     }
 
     public void addFirst(T element) {
-        circularNode tmp = new circularNode(element, null, null);
+        CircularNode tmp = new CircularNode(element, null, null);
         if (size == 0) {
             addEmptyDeque(element);
             return;
@@ -54,7 +54,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
     }
 
     private void addEmptyDeque(T element) {
-        circularNode tmp = new circularNode(element, null, null);
+        CircularNode tmp = new CircularNode(element, null, null);
         sentinel.prev = tmp;
         sentinel.next = tmp;
         tmp.next = sentinel;
@@ -68,7 +68,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
 
     /* print out the item of Deque*/
     public void printDeque() {
-        circularNode tmp = sentinel;
+        CircularNode tmp = sentinel;
         while (tmp.next != sentinel) {
             System.out.print(tmp.next.item + " ");
             tmp = tmp.next;
@@ -81,7 +81,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
         if (i < 0 || i >= size) {
             return null;
         }
-        circularNode tmp = sentinel.next;
+        CircularNode tmp = sentinel.next;
         int count = 0;
         while (count < i) {
             tmp = tmp.next;
@@ -97,7 +97,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
         return getRecursiveHelp(i, sentinel);
     }
     /*helper func for recursion*/
-    private T getRecursiveHelp(int i, circularNode s) {
+    private T getRecursiveHelp(int i, CircularNode s) {
         if (i == 0) {
             return s.next.item;
         } else {
@@ -109,7 +109,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
         if (this.isEmpty()) {
             return null;
         }
-        circularNode tmp = sentinel.next;
+        CircularNode tmp = sentinel.next;
         sentinel.next = tmp.next;
         tmp.next.prev = sentinel;
         size -= 1;
@@ -122,7 +122,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
         if (this.isEmpty()) {
             return null;
         }
-        circularNode tmp = sentinel.prev;
+        CircularNode tmp = sentinel.prev;
         sentinel.prev = tmp.prev;
         tmp.prev.next = sentinel;
         size -= 1;
@@ -157,7 +157,7 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
 
     private class LinkedListDequeIterator implements Iterator<T> {
         private int order;
-        public LinkedListDequeIterator() {
+        private LinkedListDequeIterator() {
             order = 0;
         }
         public boolean hasNext() {
