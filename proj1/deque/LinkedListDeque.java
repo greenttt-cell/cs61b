@@ -164,6 +164,9 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
             return order < size;
         }
         public T next() {
+            if (!hasNext()) {
+                throw new java.util.NoSuchElementException();
+            }
             T item1 = get(order);
             order += 1;
             return item1;
