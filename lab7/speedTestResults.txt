@@ -1,0 +1,5 @@
+InsertRandomSpeedTest
+stringLength  stringNumber time
+3              100         0.0
+3              10000
+3              100000
