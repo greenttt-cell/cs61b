@@ -580,5 +580,6 @@ public class Repository {
             addParentToQueue(tmp1, commitMap.get(id1).getParentID());
         }
         queue1.addAll(tmp1);
+        return null;
     }
  }
