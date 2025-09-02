@@ -55,7 +55,7 @@ public class Repository {
      */
     public static void init() {
         boolean check = new File(CWD, ".gitlet").exists();
-        if (!check) {
+        if (check) {
             System.out.println("A Gitlet version-control system already exists in the current directory.");
         } else {
             GITLET_DIR.mkdir();

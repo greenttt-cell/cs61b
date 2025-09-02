@@ -7,9 +7,6 @@ public class Blob implements Serializable {
     private String id;
     private byte[] content;
 
-    public Blob() {
-        content = null;
-    }
     public Blob(File file) {
         content = Utils.readContents(file);
         id = Utils.sha1(content);

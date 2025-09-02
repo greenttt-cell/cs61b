@@ -40,7 +40,7 @@ public class Commit implements Serializable {
     public Commit() {
         message = "initial commit";
         timestamp = new Date(0);
-        parentID = (String[]) new Object[2];
+        parentID = new String[2];
         map = new TreeMap<>();
         id = Utils.sha1(message, timestamp.toString(), map.toString(), "");
         commitMap.put(id, this);
