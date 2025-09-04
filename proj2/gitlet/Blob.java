@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.Serializable;
 
 public class Blob implements Serializable {
+    private static final long serialVersionUID = 1L;
     private String id;
     private byte[] content;
 

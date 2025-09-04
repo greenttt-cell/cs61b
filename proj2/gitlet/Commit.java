@@ -9,7 +9,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.TreeMap;
 
-import static gitlet.Repository.commitMap;
+
 
 /** Represents a gitlet commit object.
  *  TODO: It's a good idea to give a description here of what else this Class
@@ -18,6 +18,7 @@ import static gitlet.Repository.commitMap;
  *  @author TODO
  */
 public class Commit implements Serializable {
+    private static final long serialVersionUID = 1L;
     /**
      * TODO: add instance variables here.
      *
@@ -37,13 +38,14 @@ public class Commit implements Serializable {
     /** map that tracked blob,and value is the hashing of the blob*/
     private TreeMap<String, String> map;
 
-    public Commit() {
-        message = "initial commit";
-        timestamp = new Date(0);
-        parentID = new String[2];
-        map = new TreeMap<>();
-        id = Utils.sha1(message, timestamp.toString(), map.toString(), "");
-        commitMap.put(id, this);
+    public Commit(String message, Date timestamp, String[] parentID, TreeMap<String, String> map) {
+        this.message = message;
+        this.timestamp = timestamp;
+        this.parentID = new String[2];
+        this.parentID[0] = parentID[0];  // parentID[0] 是父提交
+        this.parentID[1] = parentID[1];
+        this.map = map;
+        this.createID();
     }
 
     public String getId() {
@@ -52,29 +54,19 @@ public class Commit implements Serializable {
     public TreeMap<String, String> getMap() {
         return map;
     }
-    public static Commit createCommit(String message) {
-        Commit parent1 = commitMap.get(Repository.getHead());
-        Commit current = new Commit();
-        current.message = message;
-        current.parentID[0] = parent1.id;
-        current.timestamp = new Date();
-        current.map = new TreeMap<>(parent1.map);
-        current.createID();
-        return current;
-    }
 
     public void createID() {
+        String mapToString = (map == null) ? "Null" : map.toString();
         if (parentID[0] == null) {
-            id = Utils.sha1(message, timestamp.toString(), map.toString(), "", "");
+            id = Utils.sha1(message, timestamp.toString(), mapToString);
         }
         else if (parentID[1] == null) {
-            id = Utils.sha1(message, timestamp.toString(), map.toString(), parentID[0], "");
+            id = Utils.sha1(message, timestamp.toString(), mapToString, parentID[0]);
         }
         else {
-            id = Utils.sha1(message, timestamp.toString(), map.toString(), parentID[0], parentID[1]);
+            id = Utils.sha1(message, timestamp.toString(), mapToString, parentID[0], parentID[1]);
         }
     }
-
     public String[] getParentID() {
         return parentID;
     }
@@ -85,14 +77,5 @@ public class Commit implements Serializable {
         return timestamp;
     }
 
-    public static Commit createMergeCommit(Commit given, Commit current, String message, TreeMap<String, String> mergeMap) {
-        Commit merge = new Commit();
-        merge.timestamp = new Date();
-        merge.message = message;
-        merge.parentID[0] = current.getId();
-        merge.parentID[1] = given.getId();
-        merge.map = mergeMap;
-        merge.createID();
-        return merge;
-    }
+
 }

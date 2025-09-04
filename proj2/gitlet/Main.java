@@ -17,57 +17,58 @@ public class Main {
             exitWithError("Must have at least one argument");
         }
 
+        Repository repo = new Repository();
         String firstArg = args[0];
         switch(firstArg) {
             case "init":
                 // TODO: handle the `init` command
-                init();
+                repo.init();
                 break;
             case "add":
                 // TODO: handle the `add [filename]` command
-                add(args[1]);
+                repo.add(args[1]);
                 break;
             // TODO: FILL THE REST IN
             case "commit":
-                commit(args[1]);
+                repo.commit(args[1]);
                 break;
             case "rm":
-                rm(args[1]);
+                repo.rm(args[1]);
                 break;
             case "log":
-                log();
+                repo.log();
                 break;
             case "global-log":
-                globalLog();
+                repo.globalLog();
                 break;
             case "find":
-                find(args[1]);
+                repo.find(args[1]);
                 break;
             case "status":
-                status();
+                repo.status();
                 break;
             case "checkout":
                 int number = args.length;
                 if (number == 3) {
-                    checkout1(args[2]);
+                    repo.checkout1(args[2]);
                 }
                 else if (number == 4) {
-                    checkout2(args[1], args[3]);
+                    repo.checkout2(args[1], args[3]);
                 } else if (number == 2) {
-                    checkout3(args[1]);
+                    repo.checkout3(args[1]);
                 }
                 break;
             case "branch":
-                branch(args[1]);
+                repo.branch(args[1]);
                 break;
             case "rm-branch":
-                rm_branch(args[1]);
+                repo.rm_branch(args[1]);
                 break;
             case "reset":
-                reset(args[1]);
+                repo.reset(args[1]);
                 break;
             case "merge":
-                merge(args[1]);
+                repo.merge(args[1]);
                 break;
             default:
                 exitWithError(String.format("Unknown command: %s", args[0]));

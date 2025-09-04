@@ -1,11 +1,11 @@
 package gitlet;
 
 import java.io.File;
+import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
-import static gitlet.Commit.createCommit;
-import static gitlet.Commit.createMergeCommit;
 import static gitlet.Utils.*;
 
 // TODO: any imports you need here
@@ -30,41 +30,150 @@ public class Repository {
     /** The .gitlet directory. */
     public static final File GITLET_DIR = join(CWD, ".gitlet");
     /** The commit directory.*/
-    public static final File COMMIT_DIR = join(GITLET_DIR, "commit");
+    public static final File COMMITS_DIR = join(GITLET_DIR, "commits");
     /** The Blob directory */
     public static final File BLOB_DIR = join(GITLET_DIR, "blob");
+    public static final File REPO_FILE = new File(GITLET_DIR, "repoState");
 
     /* TODO: fill in the rest of this class. */
     /* create a staging area using set*/
     /*branch name with HEAD commitID */
-    public static TreeMap<String, String> STAGING_AREA_ADD = new TreeMap<>();/* FILEName with blobID*/
-    public static TreeMap<String, String> STAGING_AREA_RM = new TreeMap<>();
-    public static TreeMap<String, Commit> commitMap = new TreeMap<>();
-    public static TreeMap<String, String> BRANCH = new TreeMap<>();
-    private static String Master;
-    private static String HEAD;
-    private static String CURRENT_BRANCH;//name string
-    public static String getHead() {
+    public TreeMap<String, String> STAGING_AREA_ADD = new TreeMap<>();/* FILEName with blobID*/
+    public TreeMap<String, String> STAGING_AREA_RM = new TreeMap<>();
+    public TreeMap<String, Commit> commitMap = new TreeMap<>();
+    public TreeMap<String, String> BRANCH = new TreeMap<>();
+    private String Master;
+    private String HEAD;
+    private String CURRENT_BRANCH;//name string
+    public String getHead() {
         return HEAD;
     }
+
+    public Repository() {
+
+    }
+
+    public String getHEAD() { return HEAD; }
+    public String getCurrentBranch() { return CURRENT_BRANCH; }
+    public TreeMap<String, Commit> getCommitMap() { return commitMap; }
+    public TreeMap<String, String> getBranchMap() { return BRANCH; }
+    public TreeMap<String, String> getStagingAdd() { return STAGING_AREA_ADD; }
+    public TreeMap<String, String> getStagingRm() { return STAGING_AREA_RM; }
+    public File getCwd() { return CWD; }
+    public File getGitletDir() { return GITLET_DIR; }
+    public File getCommitDir() { return COMMITS_DIR; }
+    public File getBlobDir() { return BLOB_DIR; }
+
+    private static class RepoState implements Serializable {
+        private static final long serialVersionUID = 1L;
+        Set<String> commitIDs;
+        String HEAD;
+        String Master;
+        String CURRENT_BRANCH; // ADD THIS!
+        TreeMap<String, String> BRANCH; // ADD THIS!
+        TreeMap<String, String> STAGING_AREA_ADD; // ADD THIS!
+        TreeMap<String, String> STAGING_AREA_RM; // ADD THIS!
+
+        RepoState(Set<String> ids, String h, String master, String currentBranch,
+                  TreeMap<String, String> branches,
+                  TreeMap<String, String> stagingAdd,
+                  TreeMap<String, String> stagingRm) {
+            this.commitIDs = new HashSet<>(ids);
+            this.HEAD = h;
+            this.Master = master;
+            this.CURRENT_BRANCH = currentBranch;
+            this.BRANCH = new TreeMap<>(branches);
+            this.STAGING_AREA_ADD = new TreeMap<>(stagingAdd);
+            this.STAGING_AREA_RM = new TreeMap<>(stagingRm);
+        }
+    }
+    private void saveRepo() {
+        if (!GITLET_DIR.exists()) {
+            GITLET_DIR.mkdir();
+        }
+        if (!COMMITS_DIR.exists()) {
+            COMMITS_DIR.mkdir();
+        }
+        // 1. 把每个 commit 单独存文件
+        for (Commit c : commitMap.values()) {
+            File f = new File(COMMITS_DIR, c.getId());
+            Utils.writeObject(f, c);
+        }
+
+        // 2. 存储轻量级 RepoState
+        RepoState state = new RepoState(commitMap.keySet(), HEAD, Master,
+                CURRENT_BRANCH, BRANCH, STAGING_AREA_ADD, STAGING_AREA_RM);
+        Utils.writeObject(REPO_FILE, state);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void loadRepo() {
+        if (!REPO_FILE.exists()) {
+            throw new IllegalStateException("No repo found.");
+        }
+
+        RepoState state = Utils.readObject(REPO_FILE, RepoState.class);
+        this.HEAD = state.HEAD;
+        this.Master = state.Master;
+        this.CURRENT_BRANCH = state.CURRENT_BRANCH; // RESTORE THIS!
+        this.BRANCH = new TreeMap<>(state.BRANCH); // RESTORE THIS!
+        this.STAGING_AREA_ADD = new TreeMap<>(state.STAGING_AREA_ADD); // RESTORE THIS!
+        this.STAGING_AREA_RM = new TreeMap<>(state.STAGING_AREA_RM); // RESTORE THIS!
+
+        // 重建 commitMap
+        this.commitMap = new TreeMap<>();
+        for (String id : state.commitIDs) {
+            File f = new File(COMMITS_DIR, id);
+            Commit c = Utils.readObject(f, Commit.class);
+            this.commitMap.put(id, c);
+        }
+    }
+    public Commit createCommit(String message) {
+        Commit parent1 = commitMap.get(HEAD);
+        TreeMap<String, String> newMap = new TreeMap<>(parent1.getMap());
+        Commit current = new Commit(message, new Date(), new String[]{ parent1.getId(), null }, newMap);
+        commitMap.put(current.getId(), current);
+        HEAD = current.getId();
+        BRANCH.put(CURRENT_BRANCH, HEAD);
+        return current;
+    }
+    public Commit createMergeCommit(Commit given, Commit current, String message, TreeMap<String, String> mergeMap) {
+        //Commit currentCommit = commitMap.get(HEAD);
+        Commit merge = new Commit(message, new Date(), new String[]{current.getId(), given.getId()}, mergeMap);
+        commitMap.put(merge.getId(), merge);
+        HEAD = merge.getId();;
+        BRANCH.put(CURRENT_BRANCH, HEAD);
+        return merge;
+    }
+
+
     /*TODO: Creates a new Gitlet version-control system in the current directory
      *      create a new commit, a commit that contains no files and has the commit message initial commit
      *      a single branch: master, which initially points to this initial commit, and master will be the current branch
      *      timestamp for this initial commit will be 00:00:00 UTC, Thursday, 1 January 1970
      *      ERROR CASE :print the error message A Gitlet version-control system already exists in the current directory.
      */
-    public static void init() {
-        boolean check = new File(CWD, ".gitlet").exists();
-        if (check) {
+    public void init() {
+        //boolean check = new File(CWD, ".gitlet").exists();
+        if (GITLET_DIR.exists()) {
             System.out.println("A Gitlet version-control system already exists in the current directory.");
         } else {
             GITLET_DIR.mkdir();
-            Commit initialCommit = new Commit();
+            if (!COMMITS_DIR.exists()) {
+                COMMITS_DIR.mkdirs();
+            }
+            if (!BLOB_DIR.exists()) {
+                BLOB_DIR.mkdirs();
+            }
+
+
+            Commit initialCommit = new Commit("initial commit", new Date(0), new String[]{null, null}, new TreeMap<>());
             Master = initialCommit.getId();
             HEAD = Master;
             commitMap.put(HEAD, initialCommit);
             BRANCH.put("master", Master);
             CURRENT_BRANCH = "master";
+            saveRepo();
         }
     }
 
@@ -76,7 +185,8 @@ public class Repository {
      *      ERROR CASE: If the file does not exist, print the error message File does not exist.
      *                  and exit without changing anything.
      */
-    public static void add(String FileName) {
+    public void add(String FileName) {
+        loadRepo();
         File fileAdded = new File(CWD, FileName);
         if (!fileAdded.exists()) {
             System.out.println("File does not exist.");
@@ -92,8 +202,9 @@ public class Repository {
         } else {
             STAGING_AREA_ADD.put(FileName, blob.getId());
         }
-        writeObject(BLOB_DIR, blob);
-
+        File blobFile = new File(BLOB_DIR, blob.getId());
+        writeObject(blobFile, blob);
+        saveRepo();
     }
 
     /* commit(string message)
@@ -107,7 +218,8 @@ public class Repository {
      *       FAILURE: no files in staging area,print No changes added to the commit.
      *                if commit message is null:print error -> Please enter a commit message.
      */
-    public static void commit(String message) {
+    public void commit(String message) {
+        loadRepo();
         /* error cases */
         if (STAGING_AREA_ADD == null && STAGING_AREA_RM == null) {
             System.out.println("No changes added to the commit.");
@@ -129,13 +241,14 @@ public class Repository {
                 current.getMap().remove(fileName);
             } STAGING_AREA_RM.clear();
         }
-        current.createID();
         HEAD = current.getId();
         Master = HEAD;
-        writeObject(COMMIT_DIR, current);
+        File commitFile = new File(COMMITS_DIR, current.getId());
+        writeObject(commitFile, current);
         /* 更新branch，它仍然只保留分支的head commit*/
         String oldValue = BRANCH.get(CURRENT_BRANCH);
         BRANCH.replace(CURRENT_BRANCH, oldValue, current.getId());
+        saveRepo();
     }
 
     /* rm(string file name)
@@ -144,7 +257,8 @@ public class Repository {
     *       FAILURE: if not staged or tracked by current commit(head)
     *       print error message :No reason to remove the file.
      */
-    public static void rm(String FileName) {
+    public void rm(String FileName) {
+        loadRepo();
         File file = new File(CWD, FileName);
         TreeMap<String, String> current = commitMap.get(HEAD).getMap();
         if (STAGING_AREA_ADD.containsKey(FileName)) {
@@ -159,6 +273,7 @@ public class Repository {
         if (!STAGING_AREA_ADD.containsKey(FileName) && !current.containsKey(FileName)) {
             System.out.println("No reason to remove the file.");
         }
+        saveRepo();
     }
 
     /*log
@@ -166,7 +281,7 @@ public class Repository {
     *       before each commit display === and after each commit an empty line
     *       merge commit display if has two parent commits
      */
-    private static void printCommit(Commit commit) {
+    private void printCommit(Commit commit) {
         String[] parentID = commit.getParentID();
         System.out.println("===");
         System.out.println(String.format("commit %s", commit.getId()));
@@ -175,42 +290,53 @@ public class Repository {
                     parentID[0].substring(0, 7),
                     parentID[1].substring(0, 7)));
         }
-        System.out.println(String.format("Date: %s", commit.getTimestamp().toString()));
+        // 时间格式化,太平洋时间
+        SimpleDateFormat sdf = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z", Locale.ENGLISH);
+        sdf.setTimeZone(TimeZone.getTimeZone("PST")); // 固定时区为 PST
+        System.out.println("Date: " + sdf.format(commit.getTimestamp()));
         System.out.println(commit.getMessage());
         System.out.println();
     }
 
-    public static void log() {
+    public void log() {
+        loadRepo();
         Commit tmp = commitMap.get(HEAD);
         while (tmp != null) {
             printCommit(tmp);
+            if (tmp.getParentID()[0] == null) {
+                break;
+            }
             tmp = commitMap.get(tmp.getParentID()[0]);
         }
+        saveRepo();
     }
 
     /* global-log
     TODO: Print all the commit
      */
-    public static void globalLog() {
-        List<String> commitName = plainFilenamesIn(COMMIT_DIR);
+    public void globalLog() {
+        loadRepo();
+        List<String> commitName = plainFilenamesIn(COMMITS_DIR);
         if (commitName == null) {
             return;
         }
         for (String name : commitName) {
-            Commit tmpCommit = readObject(join(COMMIT_DIR, name), Commit.class);
+            Commit tmpCommit = readObject(join(COMMITS_DIR, name), Commit.class);
             printCommit(tmpCommit);
         }
+        saveRepo();
     }
 
-    public static void find(String commitMessage) {
-        List<String> commitName = plainFilenamesIn(COMMIT_DIR);
+    public void find(String commitMessage) {
+        loadRepo();
+        List<String> commitName = plainFilenamesIn(COMMITS_DIR);
         if (commitName == null) {
             System.out.println("Found no commit with that message.");
             return;
         }
         boolean check = false;
         for (String name : commitName) {
-            Commit tmpCommit = readObject(join(COMMIT_DIR, name), Commit.class);
+            Commit tmpCommit = readObject(join(COMMITS_DIR, name), Commit.class);
             if (tmpCommit.getMessage().equals(commitMessage)) {
                 check = true;
                 System.out.println(tmpCommit.getId());
@@ -219,9 +345,11 @@ public class Repository {
         if (!check) {
             System.out.println("Found no commit with that message.");
         }
+        saveRepo();
     }
 
-    public static void status() {
+    public void status() {
+        loadRepo();
         System.out.println("=== Branches ===");
         System.out.println("*" + CURRENT_BRANCH);
         for (Map.Entry<String,String > entry : BRANCH.entrySet()) {
@@ -247,17 +375,18 @@ public class Repository {
 
         System.out.println("=== Untracked Files ===");
         System.out.println();
+        saveRepo();
     }
 
     /** write file content into CWD */
-    private static void checkOut3Help(String FileName, Commit commit) {
+    private void checkOut3Help(String FileName, Commit commit) {
         String blobID = commit.getMap().get(FileName);
         File file = join(BLOB_DIR, blobID);
         Blob blob = readObject(file, Blob.class);
         File fileWrite = join(CWD, FileName);
         writeContents(fileWrite, blob.getContent());
     }
-    private static void checkOutHelp(String FileName, Commit current) {
+    private void checkOutHelp(String FileName, Commit current) {
         if (!current.getMap().containsKey(FileName)) {
             System.out.println("File does not exist in that commit.");
             return;
@@ -265,22 +394,26 @@ public class Repository {
         checkOut3Help(FileName, current);
     }
     /** java gitlet.Main checkout -- [file name] */
-    public static void checkout1(String FileName) {
+    public void checkout1(String FileName) {
+        loadRepo();
         Commit current = commitMap.get(HEAD);
         checkOutHelp(FileName, current);
+        saveRepo();
     }
     /*  java gitlet.Main checkout [commit id] -- [file name]*/
-    public static void checkout2(String commitID, String FileName) {
+    public void checkout2(String commitID, String FileName) {
+        loadRepo();
         if (!commitMap.containsKey(commitID)) {
             System.out.println("No commit with that id exists.");
             return;
         }
         Commit current = commitMap.get(commitID);
         checkOutHelp(FileName, current);
+        saveRepo();
     }
     /* java gitlet.Main checkout [branch name]*/
 
-    private static void checkOut3Helper(Commit currentCommit, Commit futureCommit) {
+    private void checkOut3Helper(Commit currentCommit, Commit futureCommit) {
         /** check failure situation */
         for (Map.Entry<String,String > entry : futureCommit.getMap().entrySet()) {
             if (!currentCommit.getMap().containsKey(entry.getKey())) {  /* 原来的commit的没有tracked的文件现在在另一个commit中出现了*/
@@ -302,7 +435,8 @@ public class Repository {
         STAGING_AREA_ADD.clear();
         STAGING_AREA_RM.clear();
     }
-    public static void checkout3(String branchName) {
+    public void checkout3(String branchName) {
+        loadRepo();
         if (!BRANCH.containsKey(branchName)) {
             System.out.println("No such branch exists.");
             return;
@@ -316,19 +450,23 @@ public class Repository {
         checkOut3Helper(currentCommit, futureCommit);
         CURRENT_BRANCH = branchName;
         HEAD = futureCommit.getId();
+        saveRepo();
     }
 
     /* branch command*/
-    public static void branch(String branchName) {
+    public void branch(String branchName) {
+        loadRepo();
         if (BRANCH.containsKey(branchName)) {
             System.out.println("A branch with that name already exists.");
             return;
         }
         Commit current = commitMap.get(HEAD);
         BRANCH.put(branchName, current.getId());
+        saveRepo();
     }
     /* rm-branch */
-    public static void rm_branch(String branchName) {
+    public void rm_branch(String branchName) {
+        loadRepo();
         if (!BRANCH.containsKey(branchName)) {
             System.out.println("A branch with that name does not exist.");
             return;
@@ -338,15 +476,18 @@ public class Repository {
             return;
         }
         BRANCH.remove(branchName);
+        saveRepo();
     }
 
-    public static void reset(String commitId) {
+    public void reset(String commitId) {
+        loadRepo();
         if (!commitMap.containsKey(commitId)) {
             System.out.println("No commit with that id exists.");
             return;
         }
         checkOut3Helper(commitMap.get(HEAD), commitMap.get(commitId));
         HEAD = commitId;
+        saveRepo();
     }
 
     /**
@@ -361,7 +502,8 @@ public class Repository {
      *     /                        but disappear in the current branch, unmodified in the given branch should be disappear
 *           mergecommit 最后是通过staging area和现有branch来生成，不用手工put来维护
      */
-    public static void merge(String branchName) {
+    public void merge(String branchName) {
+        loadRepo();
         /* failure cases */
         if (!BRANCH.containsKey(branchName)) {
             System.out.println("A branch with that name does not exist.");
@@ -486,21 +628,22 @@ public class Repository {
         String message = String.format("Merged %s into %s.", branchName, CURRENT_BRANCH);
         Commit mergeCommit = createMergeCommit(givenCommit, currentCommit, message, mergeMap);
         HEAD = mergeCommit.getId();
+        saveRepo();
     }
-    private static void conflictHelp(String current, String given, String fileName) {
+    private void conflictHelp(String current, String given, String fileName) {
         String content = String.format("<<<<<<< HEAD\n%s\n=======\n%s\n>>>>>>>", current, given);
         File fileToWrite = join(CWD, fileName);
         writeContents(fileToWrite, content);
         add(fileName);
     }
     /*get the content (string format) of the file*/
-    private static String fileContent(Commit commit, String fileName) {
+    private String fileContent(Commit commit, String fileName) {
         String blobId = commit.getMap().get(fileName);
         File file = join(BLOB_DIR, blobId);
         Blob blob = readObject(file, Blob.class);
         return new String(blob.getContent(), StandardCharsets.UTF_8);
     }
-    private static void printMergeConflict(Commit given, Commit current, String fileName) {
+    private void printMergeConflict(Commit given, Commit current, String fileName) {
         System.out.println("<<<<<<< HEAD");
         //content current branch
         System.out.println(fileContent(current, fileName));
@@ -510,7 +653,7 @@ public class Repository {
         System.out.println(">>>>>>>");
     }
     /* build a BFS algorithm to find the split point*/
-    private static String searchBFS(Commit current, Commit given) {
+    private String searchBFS(Commit current, Commit given) {
         Queue<String> queue1 = new LinkedList<>();
         Queue<String> queue2 = new LinkedList<>();
         Set<String> visited1 = new HashSet<>();
@@ -519,7 +662,7 @@ public class Repository {
         queue2.add(given.getId());
         return searchHelp(queue1, queue2, visited1, visited2);
     }
-    private static String searchHelp(Queue<String> queue1, Queue<String> queue2, Set<String> visited1, Set<String> visited2) {
+    private String searchHelp(Queue<String> queue1, Queue<String> queue2, Set<String> visited1, Set<String> visited2) {
         if (queue1.isEmpty() && queue2.isEmpty()) {
             return null;
         }
@@ -546,7 +689,7 @@ public class Repository {
             }
         } return null;
     }
-    private static String searchHelpEmpty(Queue<String> queue, Set<String> visited1, Set<String> visited2) {
+    private String searchHelpEmpty(Queue<String> queue, Set<String> visited1, Set<String> visited2) {
         while (!queue.isEmpty()) {
             String id2 = queue.poll();
             if (visited1.contains(id2)) {
@@ -562,14 +705,14 @@ public class Repository {
         }
         return null;
     }
-    private static void addParentToQueue (Queue<String> queue, String[] parentId) {
+    private void addParentToQueue (Queue<String> queue, String[] parentId) {
         for (int i = 0; i < 2; i += 1) {
             if (parentId[i] != null) {
                 queue.add(parentId[i]);
             }
         }
     }
-    private static String forHelp(Queue<String> queue1, Queue<String> tmp1, Set<String> visited1, Set<String> visited2) {
+    private String forHelp(Queue<String> queue1, Queue<String> tmp1, Set<String> visited1, Set<String> visited2) {
         int queue1_size = queue1.size();
         for (int i = 0; i < queue1_size; i += 1) {
             String id1 = queue1.poll();
