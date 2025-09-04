@@ -35,7 +35,7 @@ public class Commit implements Serializable {
     private String[] parentID;
     /** the hashing of the commit */
     private String id;
-    /** map that tracked blob,and value is the hashing of the blob*/
+    /** map that tracked blob,and value is the hashing of the blob,key is the filename*/
     private TreeMap<String, String> map;
 
     public Commit(String message, Date timestamp, String[] parentID, TreeMap<String, String> map) {

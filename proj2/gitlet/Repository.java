@@ -195,15 +195,18 @@ public class Repository {
         }
         Blob blob = new Blob(fileAdded);
         Commit currentCommit = commitMap.get(HEAD);
-        if (currentCommit.getMap().containsKey(blob.getId())) {
+        if (currentCommit.getMap().containsKey(FileName)) {
+            if (STAGING_AREA_RM.containsKey(FileName)) {
+                STAGING_AREA_RM.remove(FileName);
+            }
             if (STAGING_AREA_ADD.containsKey(FileName)) {
-                rm(FileName);
+                STAGING_AREA_ADD.remove(FileName);
             }
         } else {
+            File blobFile = new File(BLOB_DIR, blob.getId());
+            writeObject(blobFile, blob);
             STAGING_AREA_ADD.put(FileName, blob.getId());
         }
-        File blobFile = new File(BLOB_DIR, blob.getId());
-        writeObject(blobFile, blob);
         saveRepo();
     }
 
@@ -221,22 +224,24 @@ public class Repository {
     public void commit(String message) {
         loadRepo();
         /* error cases */
-        if (STAGING_AREA_ADD == null && STAGING_AREA_RM == null) {
+        boolean addEmpty = STAGING_AREA_ADD == null || STAGING_AREA_ADD.isEmpty();
+        boolean rmEmpty = STAGING_AREA_RM == null || STAGING_AREA_RM.isEmpty();
+        if (addEmpty && rmEmpty) {
             System.out.println("No changes added to the commit.");
             return;
         }
-        if (message == null) {
-            System.out.println("No changes added to the commit.");
+        if (message == null || message.trim().isEmpty()) {
+            System.out.println("Please enter a commit message.");
             return;
         }
 
         Commit current = createCommit(message);
-        if (STAGING_AREA_ADD != null) {
+        if (STAGING_AREA_ADD != null && !STAGING_AREA_ADD.isEmpty()) {
             for (Map.Entry<String, String> entry : STAGING_AREA_ADD.entrySet()) {
                 current.getMap().put(entry.getKey(), entry.getValue());
             } STAGING_AREA_ADD.clear();
         }
-        if (STAGING_AREA_RM != null) {
+        if (STAGING_AREA_RM != null && !STAGING_AREA_RM.isEmpty()) {
             for (String fileName : STAGING_AREA_RM.keySet()) {
                 current.getMap().remove(fileName);
             } STAGING_AREA_RM.clear();
@@ -261,16 +266,19 @@ public class Repository {
         loadRepo();
         File file = new File(CWD, FileName);
         TreeMap<String, String> current = commitMap.get(HEAD).getMap();
+        boolean removed = false;
         if (STAGING_AREA_ADD.containsKey(FileName)) {
             STAGING_AREA_ADD.remove(FileName);
+            removed = true;
         }
         if (current.containsKey(FileName)) {
             if (!STAGING_AREA_RM.containsKey(FileName)) {
                 STAGING_AREA_RM.put(FileName, current.get(FileName));
             }
             Utils.restrictedDelete(file);
+            removed = true;
         }
-        if (!STAGING_AREA_ADD.containsKey(FileName) && !current.containsKey(FileName)) {
+        if (!removed) {
             System.out.println("No reason to remove the file.");
         }
         saveRepo();
