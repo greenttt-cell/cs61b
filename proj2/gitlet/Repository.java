@@ -137,14 +137,6 @@ public class Repository {
         BRANCH.put(CURRENT_BRANCH, HEAD);
         return current;
     }
-    public Commit createMergeCommit(Commit given, Commit current, String message, TreeMap<String, String> mergeMap) {
-        //Commit currentCommit = commitMap.get(HEAD);
-        Commit merge = new Commit(message, new Date(), new String[]{current.getId(), given.getId()}, mergeMap);
-        commitMap.put(merge.getId(), merge);
-        HEAD = merge.getId();;
-        BRANCH.put(CURRENT_BRANCH, HEAD);
-        return merge;
-    }
 
 
     /*TODO: Creates a new Gitlet version-control system in the current directory
@@ -518,6 +510,15 @@ public class Repository {
      *     /                        but disappear in the current branch, unmodified in the given branch should be disappear
 *           mergecommit 最后是通过staging area和现有branch来生成，不用手工put来维护
      */
+    public Commit createMergeCommit(Commit given, Commit current, String message, TreeMap<String, String> mergeMap) {
+        //Commit currentCommit = commitMap.get(HEAD);
+        Commit merge = new Commit(message, new Date(), new String[]{current.getId(), given.getId()}, mergeMap);
+        commitMap.put(merge.getId(), merge);
+        HEAD = merge.getId();
+        BRANCH.put(CURRENT_BRANCH, HEAD);
+        return merge;
+    }
+
     public void merge(String branchName) {
         loadRepo();
         /* failure cases */
@@ -533,7 +534,7 @@ public class Repository {
             System.out.println("You have uncommitted changes.");
             System.exit(0);
         }
-        /* 还有2个failure没有写 */
+        /* 还有2个failure */
         for (String fileName : plainFilenamesIn(CWD)) {
             boolean currentRes = commitMap.get(HEAD).getMap().containsKey(fileName);
             boolean givenRes = commitMap.get(BRANCH.get(branchName)).getMap().containsKey(fileName);
@@ -557,7 +558,7 @@ public class Repository {
             System.out.println("Current branch fast-forwarded.");
             return;
         }
-        /* other more complicated cases TODO: build sets containing files modified*/
+        /* other more complicated cases*/
         //Commit mergeCommit =//
         Set<String> currentFile = new HashSet<>();
         Set<String> givenFile = new HashSet<>();
@@ -567,49 +568,64 @@ public class Repository {
         for (Map.Entry<String,String > entry : splitCommit.getMap().entrySet()) {
             String fileName = entry.getKey();
             String splitId = entry.getValue();
-
+            //三者都有该文件（这里三者文件内容完全相同不用代码处理）
             if (currentMap.containsKey(fileName) && givenMap.containsKey(fileName)) {
                 String currentId = currentMap.get(fileName);
                 String givenId = givenMap.get(fileName);
+                //文件内容current与split相同，given改变
                 if (!givenId.equals(splitId) && currentId.equals(splitId)) {
                     checkout2(givenId, fileName);
                     add(fileName);
+                    mergeMap.put(fileName, givenId);//TODO
                 }
+                //文件内容given与split相同，current改变
                 else if (givenId.equals(splitId) && !currentId.equals(splitId)) {
-                    mergeMap.put(fileName, currentMap.get(fileName));
+                    mergeMap.put(fileName, currentId);
                     //add(fileName);
                 }
+                //文件内容current与given相同，但与split不同
                 else if (!givenId.equals(splitId) && givenId.equals(currentId)) {
                     mergeMap.put(fileName, currentId);
                 }
+                //三者内容互不相同
                 else if (!givenId.equals(splitId)) {//三个互不相同
                     String currentContent = fileContent(currentCommit, fileName);
                     String givenContent = fileContent(givenCommit, fileName);
                     conflictHelp(currentContent, givenContent, fileName);
                 }
             }
+            //current与split都有该文件，但given没有（disappear）
             else if (currentMap.containsKey(fileName) && !givenMap.containsKey(fileName)) {
                 String currentId = currentMap.get(fileName);
+                //内容也相同
                 if (currentId.equals(splitId)) {
+                    mergeMap.remove(fileName);
                     rm(fileName);
                 }
+                //内容不同
                 else {
                     String currentContent = fileContent(currentCommit, fileName);
                     String givenContent = "";
                     conflictHelp(currentContent, givenContent, fileName);
                 }
             }
+            //要么只有split有该文件(不需要处理），
+            //要么given有，但是current没有该文件
             else {
+                //given有，current没有而且given与split文件内容不一样的情形
                 String givenId = givenMap.get(fileName);
                 if (!givenId.equals(splitId)) {
                     String currentContent = "";
                     String givenContent = fileContent(givenCommit, fileName);
                     conflictHelp(currentContent, givenContent, fileName);
                 }
+                else {
+                    mergeMap.remove(fileName);//TODO:还需思考只有split有，或者given与split内容相同，而且current没有
+                }
             }
         }
 
-        /*找出只有current 有的文件，保持不变*/
+        /*找出只有current有的文件，保持不变*/
         for (Map.Entry<String,String > entry : currentCommit.getMap().entrySet()) {
             String currentId = entry.getValue();
             String fileName = entry.getKey();
@@ -617,21 +633,28 @@ public class Repository {
                 mergeMap.put(fileName, currentId);
             }
         }
+
         for (Map.Entry<String,String > entry : givenCommit.getMap().entrySet()) {
             String givenId = entry.getValue();
             String fileName = entry.getKey();
             /* 找出只有given 有的文件， 其他两个没有的*/
             if (!currentMap.containsKey(fileName) && !splitCommit.getMap().containsKey(fileName)) {
-                checkout2(currentCommit.getId(),fileName);
+                checkout2(givenCommit.getId(),fileName);//TODO修改
                 add(fileName);
+                mergeMap.put(fileName, givenId);//修改TODO
             }
-            /*找出只有split没有的文件，处理current和given内容不同时候的conflict*/
+            /*找出只有split没有的文件，处理current和given*/
             if (currentMap.containsKey(fileName) && !splitCommit.getMap().containsKey(fileName)) {
                 String currentId = currentMap.get(fileName);
+                //内容不同时候的conflict
                 if (!currentId.equals(givenId)) {
                     String currentContent = fileContent(currentCommit, fileName);
                     String givenContent = fileContent(givenCommit, fileName);
                     conflictHelp(currentContent, givenContent, fileName);
+                }
+                //内容相同时候的conflict
+                else {
+                    mergeMap.put(fileName, currentId);
                 }
             }
         }
@@ -641,13 +664,14 @@ public class Repository {
             mergeMap.put(entry.getKey(), entry.getValue());
         }
         STAGING_AREA_ADD.clear();
+        STAGING_AREA_RM.clear();
         String message = String.format("Merged %s into %s.", branchName, CURRENT_BRANCH);
         Commit mergeCommit = createMergeCommit(givenCommit, currentCommit, message, mergeMap);
         HEAD = mergeCommit.getId();
         saveRepo();
     }
     private void conflictHelp(String current, String given, String fileName) {
-        String content = String.format("<<<<<<< HEAD\n%s\n=======\n%s\n>>>>>>>", current, given);
+        String content = String.format("<<<<<<< HEAD\n%s\n=======\n%s\n>>>>>>>\n", current, given);
         File fileToWrite = join(CWD, fileName);
         writeContents(fileToWrite, content);
         add(fileName);
@@ -660,6 +684,9 @@ public class Repository {
         return new String(blob.getContent(), StandardCharsets.UTF_8);
     }
     private void printMergeConflict(Commit given, Commit current, String fileName) {
+        //String currentFileContent = fileContent(current, fileName);
+        //String givenFileContent = fileContent(given, fileName);
+
         System.out.println("<<<<<<< HEAD");
         //content current branch
         System.out.println(fileContent(current, fileName));
@@ -695,13 +722,13 @@ public class Repository {
                 if (result1 != null) {
                     return result1;
                 }
-                queue1.addAll(tmp1);
+                //queue1.addAll(tmp1);
                 Queue<String> tmp2 = new LinkedList<>();
-                String result2 = forHelp(queue1, tmp2, visited1, visited2);
+                String result2 = forHelp(queue2, tmp2, visited2, visited1);
                 if (result2 != null) {
                     return result2;
                 }
-                queue2.addAll(tmp2);
+                //queue2.addAll(tmp2);
             }
         } return null;
     }
@@ -728,6 +755,7 @@ public class Repository {
             }
         }
     }
+    /*queue1 拿出一个检查tmp1是否已经访问过，没有就加入queue1访问的集合，然后顺便把tmp1的父母加入tmp1的访问集合中*/
     private String forHelp(Queue<String> queue1, Queue<String> tmp1, Set<String> visited1, Set<String> visited2) {
         int queue1_size = queue1.size();
         for (int i = 0; i < queue1_size; i += 1) {
@@ -736,7 +764,7 @@ public class Repository {
                 return id1;
             }
             visited1.add(id1);
-            addParentToQueue(tmp1, commitMap.get(id1).getParentID());
+            addParentToQueue(tmp1, commitMap.get(id1).getParentID());//把现在探索的这一层的每个节点的父母加入tmp1，然后再转移到queue1中
         }
         queue1.addAll(tmp1);
         return null;
