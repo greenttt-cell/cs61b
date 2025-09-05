@@ -53,6 +53,10 @@ public class Main {
                     repo.checkout1(args[2]);
                 }
                 else if (number == 4) {
+                    if (!args[2].equals("--")) {
+                        System.out.println("Incorrect operands");
+                        break;
+                    }
                     repo.checkout2(args[1], args[3]);
                 } else if (number == 2) {
                     repo.checkout3(args[1]);

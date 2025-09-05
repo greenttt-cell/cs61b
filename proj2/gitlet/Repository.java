@@ -196,11 +196,19 @@ public class Repository {
         Blob blob = new Blob(fileAdded);
         Commit currentCommit = commitMap.get(HEAD);
         if (currentCommit.getMap().containsKey(FileName)) {
-            if (STAGING_AREA_RM.containsKey(FileName)) {
-                STAGING_AREA_RM.remove(FileName);
+            String trackedID = currentCommit.getMap().get(FileName);
+            if (trackedID.equals(blob.getId())) {
+                if (STAGING_AREA_RM.containsKey(FileName)) {
+                    STAGING_AREA_RM.remove(FileName);
+                }
+                if (STAGING_AREA_ADD.containsKey(FileName)) {
+                    STAGING_AREA_ADD.remove(FileName);
+                }
             }
-            if (STAGING_AREA_ADD.containsKey(FileName)) {
-                STAGING_AREA_ADD.remove(FileName);
+            else {
+                File blobFile = new File(BLOB_DIR, blob.getId());
+                writeObject(blobFile, blob);
+                STAGING_AREA_ADD.put(FileName, blob.getId());
             }
         } else {
             File blobFile = new File(BLOB_DIR, blob.getId());
@@ -224,8 +232,8 @@ public class Repository {
     public void commit(String message) {
         loadRepo();
         /* error cases */
-        boolean addEmpty = STAGING_AREA_ADD == null || STAGING_AREA_ADD.isEmpty();
-        boolean rmEmpty = STAGING_AREA_RM == null || STAGING_AREA_RM.isEmpty();
+        boolean addEmpty = STAGING_AREA_ADD.isEmpty();
+        boolean rmEmpty = STAGING_AREA_RM.isEmpty();
         if (addEmpty && rmEmpty) {
             System.out.println("No changes added to the commit.");
             return;
@@ -521,7 +529,7 @@ public class Repository {
             System.out.println("Cannot merge a branch with itself.");
             return;
         }
-        if (STAGING_AREA_RM != null || STAGING_AREA_ADD != null) {
+        if (!STAGING_AREA_RM.isEmpty() || !STAGING_AREA_ADD.isEmpty()) {
             System.out.println("You have uncommitted changes.");
             System.exit(0);
         }
