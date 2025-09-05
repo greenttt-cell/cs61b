@@ -510,7 +510,7 @@ public class Repository {
      *     /                        but disappear in the current branch, unmodified in the given branch should be disappear
 *           mergecommit 最后是通过staging area和现有branch来生成，不用手工put来维护
      */
-    public Commit createMergeCommit(Commit given, Commit current, String message, TreeMap<String, String> mergeMap) {
+    private Commit createMergeCommit(Commit given, Commit current, String message, TreeMap<String, String> mergeMap) {
         //Commit currentCommit = commitMap.get(HEAD);
         Commit merge = new Commit(message, new Date(), new String[]{current.getId(), given.getId()}, mergeMap);
         commitMap.put(merge.getId(), merge);
@@ -544,6 +544,7 @@ public class Repository {
                 return;
             }
         }
+        boolean mergeConflict = false;//确定是否遇到merge conflict
         Commit currentCommit = commitMap.get(HEAD);
         Commit givenCommit = commitMap.get(BRANCH.get(branchName));
         String splitPoint = searchBFS(currentCommit, givenCommit);
@@ -592,6 +593,7 @@ public class Repository {
                     String currentContent = fileContent(currentCommit, fileName);
                     String givenContent = fileContent(givenCommit, fileName);
                     conflictHelp(currentContent, givenContent, fileName);
+                    mergeConflict = true;
                 }
             }
             //current与split都有该文件，但given没有（disappear）
@@ -605,8 +607,9 @@ public class Repository {
                 //内容不同
                 else {
                     String currentContent = fileContent(currentCommit, fileName);
-                    String givenContent = "";
-                    conflictHelp(currentContent, givenContent, fileName);
+                    //String givenContent = "";
+                    conflictHelp(currentContent, null, fileName);
+                    mergeConflict = true;
                 }
             }
             //要么只有split有该文件(不需要处理），
@@ -615,9 +618,10 @@ public class Repository {
                 //given有，current没有而且given与split文件内容不一样的情形
                 String givenId = givenMap.get(fileName);
                 if (!givenId.equals(splitId)) {
-                    String currentContent = "";
+                    //String currentContent = "";
                     String givenContent = fileContent(givenCommit, fileName);
-                    conflictHelp(currentContent, givenContent, fileName);
+                    conflictHelp(null, givenContent, fileName);
+                    mergeConflict = true;
                 }
                 else {
                     mergeMap.remove(fileName);//TODO:还需思考只有split有，或者given与split内容相同，而且current没有
@@ -651,12 +655,17 @@ public class Repository {
                     String currentContent = fileContent(currentCommit, fileName);
                     String givenContent = fileContent(givenCommit, fileName);
                     conflictHelp(currentContent, givenContent, fileName);
+                    mergeConflict = true;
                 }
                 //内容相同时候的conflict
                 else {
                     mergeMap.put(fileName, currentId);
                 }
             }
+        }
+
+        if (mergeConflict) {
+            System.out.println("Encountered a merge conflict.");
         }
 
         /*最后生成完整的merge commit*/
@@ -671,14 +680,35 @@ public class Repository {
         saveRepo();
     }
     private void conflictHelp(String current, String given, String fileName) {
-        String content = String.format("<<<<<<< HEAD\n%s\n=======\n%s\n>>>>>>>\n", current, given);
+        //String content = String.format("<<<<<<< HEAD\n%s\n=======\n%s\n>>>>>>>\n", current, given);
+        StringBuilder sb = new StringBuilder();
+        sb.append("<<<<<<< HEAD\n");
+        if (current != null) {
+            sb.append(normalize(current)); // 文件存在，哪怕是空字符串，也会输出一行
+        }
+        sb.append("=======\n");
+        if (given != null) {
+            sb.append(normalize(given));
+        }
+        sb.append(">>>>>>>\n");
+
         File fileToWrite = join(CWD, fileName);
-        writeContents(fileToWrite, content);
+        writeContents(fileToWrite, sb.toString());
         add(fileName);
+    }
+    //保证打印格式正确，content能确保换行
+    private String normalize(String text) {
+        if (text == null) {
+            return "";
+        }
+        return text.endsWith("\n") ? text: text + "\n";
     }
     /*get the content (string format) of the file*/
     private String fileContent(Commit commit, String fileName) {
         String blobId = commit.getMap().get(fileName);
+        if (blobId == null) {
+            return null;
+        }
         File file = join(BLOB_DIR, blobId);
         Blob blob = readObject(file, Blob.class);
         return new String(blob.getContent(), StandardCharsets.UTF_8);
